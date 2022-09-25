@@ -52,7 +52,10 @@ int main(void)
 
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_2);
-	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_3);
+	HAL_TIM_IC_Start_IT(&htim5,TIM_CHANNEL_1);
+	HAL_TIM_IC_Start_IT(&htim5,TIM_CHANNEL_2);
+	HAL_TIM_IC_Start_IT(&htim9,TIM_CHANNEL_1);
+	HAL_TIM_IC_Start_IT(&htim9,TIM_CHANNEL_2);
 
 	uart= huart1;
 

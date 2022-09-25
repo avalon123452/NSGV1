@@ -11,8 +11,10 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim5;
+TIM_HandleTypeDef htim9;
 
-uint32_t tick=0;
+uint32_t tick=0, tim_capture[3][2]={0};
+uint8_t freq_update[3]={0};
 UART_HandleTypeDef uart={0};
 
 void SystemClock_Config(void);
@@ -25,11 +27,13 @@ static void MX_USART1_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM5_Init(void);
+static void MX_TIM9_Init(void);
 void dmsg(char *msg);
 
 int main(void)
 {
 	char msg[100];
+	double freq[3]={0}, duty_cycle[3]={0};
    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	HAL_Init();
 	/* Configure the system clock */
@@ -44,6 +48,7 @@ int main(void)
 	MX_USART3_UART_Init();
 	MX_TIM2_Init();
 	MX_TIM5_Init();
+	MX_TIM9_Init();
 
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_2);
@@ -59,6 +64,20 @@ int main(void)
 		memset(msg,0,sizeof(msg));
 		sprintf(msg,"State Input: %d",HAL_GPIO_ReadPin(GPIOB, PINB_STATE));
 		dmsg(msg);
+		for (int i=0; i<3; i++)
+		{
+			if (freq_update[i]==1)
+			{
+				freq[i]= 1000000/tim_capture[i][0];
+				duty_cycle[i]= (tim_capture[i][1]/tim_capture[i][0])*100;
+				freq_update[i]=0;
+			}
+			memset(msg,0,sizeof(msg));
+			sprintf(msg,"Frequency3: %.2f   Duty Cycle: %.2f", freq[i],duty_cycle[i]);
+			dmsg(msg);
+		}
+
+
 		HAL_Delay(1000);
 	}
 	return 0;
@@ -66,7 +85,42 @@ int main(void)
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-
+	if(htim->Instance==TIM2)
+	{
+		if(htim->Channel==HAL_TIM_ACTIVE_CHANNEL_1)
+		{
+			tim_capture[2][0]= HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+			if (tim_capture[2][0]!= 0)
+			{
+				tim_capture[2][1]= HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+				freq_update[2]=1;
+			}
+		}
+	}
+	else if(htim->Instance==TIM5)
+	{
+		if(htim->Channel==HAL_TIM_ACTIVE_CHANNEL_2)
+		{
+			tim_capture[1][0]= HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+			if (tim_capture[1][0]!= 0)
+			{
+				tim_capture[1][1]= HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+				freq_update[1]=1;
+			}
+		}
+	}
+	else if(htim->Instance==TIM9)
+	{
+		if(htim->Channel==HAL_TIM_ACTIVE_CHANNEL_1)
+		{
+			tim_capture[0][0]= HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+			if (tim_capture[0][0]!= 0)
+			{
+				tim_capture[0][1]= HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+				freq_update[0]=1;
+			}
+		}
+	}
 }
 
 void HAL_SYSTICK_Callback(void)
@@ -75,8 +129,8 @@ void HAL_SYSTICK_Callback(void)
 	if (HAL_GetTick()- tick >=1000)
 	{
 		tick = HAL_GetTick();
-		HAL_GPIO_TogglePin(GPIOC,PINC_HEART);
-		HAL_GPIO_TogglePin(GPIOC, PIN_LED);
+		HAL_GPIO_TogglePin(GPIOC,PINC_HEART|PIN_LED);
+		HAL_GPIO_TogglePin(GPIOB, PINB_EN);
 	}
 }
 
@@ -132,69 +186,122 @@ void SystemClock_Config(void)
 
 static void MX_TIM2_Init(void)
 {
-  TIM_IC_InitTypeDef sConfigIC = {0};
+	TIM_SlaveConfigTypeDef sSlaveConfig = {0};
+	TIM_IC_InitTypeDef sConfigIC = {0};
 
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 80;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 0xFFFFFFFF;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_IC_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigIC.ICPolarity = TIM_ICPOLARITY_RISING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 0;
-  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigIC.ICSelection = TIM_ICSELECTION_INDIRECTTI;
-  sConfigIC.ICPolarity = TIM_ICPOLARITY_FALLING;
-  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	htim2.Instance = TIM2;
+	htim2.Init.Prescaler = 80;
+	htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim2.Init.Period = 0xFFFFFFFF;
+	htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	if (HAL_TIM_IC_Init(&htim2) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sSlaveConfig.SlaveMode = TIM_SLAVEMODE_RESET;
+	sSlaveConfig.InputTrigger = TIM_TS_TI1FP1;
+	sSlaveConfig.TriggerPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+	sSlaveConfig.TriggerPrescaler = TIM_ICPSC_DIV1;
+	sSlaveConfig.TriggerFilter = 0;
+	if (HAL_TIM_SlaveConfigSynchro(&htim2, &sSlaveConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+	sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+	sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+	sConfigIC.ICFilter = 0;
+	if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
+	sConfigIC.ICSelection = TIM_ICSELECTION_INDIRECTTI;
+	if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_2) != HAL_OK)
+	{
+		Error_Handler();
+	}
 }
 
 static void MX_TIM5_Init(void)
 {
-  TIM_IC_InitTypeDef sConfigIC = {0};
-  htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 80;
-  htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 0xFFFFFFFF;
-  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_IC_Init(&htim5) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigIC.ICPolarity = TIM_ICPOLARITY_RISING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_INDIRECTTI;
-  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 0;
-  if (HAL_TIM_IC_ConfigChannel(&htim5, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  sConfigIC.ICPolarity = TIM_ICPOLARITY_FALLING;
-  if (HAL_TIM_IC_ConfigChannel(&htim5, &sConfigIC, TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	TIM_SlaveConfigTypeDef sSlaveConfig = {0};
+	TIM_IC_InitTypeDef sConfigIC = {0};
+
+	htim5.Instance = TIM5;
+	htim5.Init.Prescaler = 80;
+	htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim5.Init.Period = 0xFFFFFFFF;
+	htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	if (HAL_TIM_IC_Init(&htim5) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sSlaveConfig.SlaveMode = TIM_SLAVEMODE_RESET;
+	sSlaveConfig.InputTrigger = TIM_TS_TI2FP2;
+	sSlaveConfig.TriggerPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+	sSlaveConfig.TriggerPrescaler = TIM_ICPSC_DIV1;
+	sSlaveConfig.TriggerFilter = 0;
+	if (HAL_TIM_SlaveConfigSynchro(&htim5, &sSlaveConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
+	sConfigIC.ICSelection = TIM_ICSELECTION_INDIRECTTI;
+	sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+	sConfigIC.ICFilter = 0;
+	if (HAL_TIM_IC_ConfigChannel(&htim5, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+	sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+	if (HAL_TIM_IC_ConfigChannel(&htim5, &sConfigIC, TIM_CHANNEL_2) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
+
+static void MX_TIM9_Init(void)
+{
+	TIM_SlaveConfigTypeDef sSlaveConfig = {0};
+	TIM_IC_InitTypeDef sConfigIC = {0};
+
+	htim9.Instance = TIM9;
+	htim9.Init.Prescaler = 160;
+	htim9.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim9.Init.Period = 0xFFFF;
+	htim9.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	htim9.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	if (HAL_TIM_IC_Init(&htim9) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sSlaveConfig.SlaveMode = TIM_SLAVEMODE_RESET;
+	sSlaveConfig.InputTrigger = TIM_TS_TI1FP1;
+	sSlaveConfig.TriggerPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+	sSlaveConfig.TriggerPrescaler = TIM_ICPSC_DIV1;
+	sSlaveConfig.TriggerFilter = 0;
+	if (HAL_TIM_SlaveConfigSynchro(&htim9, &sSlaveConfig) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+	sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+	sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+	sConfigIC.ICFilter = 0;
+	if (HAL_TIM_IC_ConfigChannel(&htim9, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
+	sConfigIC.ICSelection = TIM_ICSELECTION_INDIRECTTI;
+	if (HAL_TIM_IC_ConfigChannel(&htim9, &sConfigIC, TIM_CHANNEL_2) != HAL_OK)
+	{
+		Error_Handler();
+	}
 }
 
 static void MX_ADC1_Init(void)

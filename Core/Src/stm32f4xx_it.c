@@ -7,6 +7,7 @@ extern I2C_HandleTypeDef hi2c2;
 extern SPI_HandleTypeDef hspi1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim5;
+extern TIM_HandleTypeDef htim9;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart3;
 
@@ -70,9 +71,14 @@ void SysTick_Handler(void)
   HAL_SYSTICK_IRQHandler();
 }
 
+void TIM1_BRK_TIM9_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&htim9);
+}
+
 void TIM2_IRQHandler(void)
 {
-	HAL_TIM_IRQHandler(&htim2);
+  HAL_TIM_IRQHandler(&htim2);
 }
 
 void TIM5_IRQHandler(void)

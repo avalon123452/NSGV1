@@ -61,7 +61,7 @@ main-build: NSGV1.elf secondary-outputs
 
 # Tool invocations
 NSGV1.elf NSGV1.map: $(OBJS) $(USER_OBJS) D:\STM\NSGV1\STM32F405VGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "NSGV1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\STM\NSGV1\STM32F405VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="NSGV1.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "NSGV1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\STM\NSGV1\STM32F405VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="NSGV1.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

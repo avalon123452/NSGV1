@@ -21,7 +21,7 @@ void HAL_TIM_IC_MspInit(TIM_HandleTypeDef* htim_ic)
     PA0-WKUP     ------> TIM2_CH1
     PA2     ------> TIM2_CH3
     */
-    GPIO_InitStruct.Pin = PINA_IC_FREQ3|PINA_IC_FREQ1;
+    GPIO_InitStruct.Pin = PINA_IC_FREQ3;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -51,6 +51,26 @@ void HAL_TIM_IC_MspInit(TIM_HandleTypeDef* htim_ic)
     /* TIM5 interrupt Init */
     HAL_NVIC_SetPriority(TIM5_IRQn, 3, 0);
     HAL_NVIC_EnableIRQ(TIM5_IRQn);
+  }
+  else if(htim_ic->Instance==TIM9)
+  {
+    /* Peripheral clock enable */
+    __HAL_RCC_TIM9_CLK_ENABLE();
+
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    /**TIM9 GPIO Configuration
+    PA2     ------> TIM9_CH1
+    */
+    GPIO_InitStruct.Pin = PINA_IC_FREQ1;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF3_TIM9;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /* TIM9 interrupt Init */
+    HAL_NVIC_SetPriority(TIM1_BRK_TIM9_IRQn, 3, 0);
+    HAL_NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
   }
 
 }

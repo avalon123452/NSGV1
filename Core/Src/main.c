@@ -33,7 +33,7 @@ void dmsg(char *msg);
 int main(void)
 {
 	char msg[100];
-	double freq[3]={0}, duty_cycle[3]={0};
+	float freq[3]={0}, duty_cycle[3]={0};
    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	HAL_Init();
 	/* Configure the system clock */
@@ -61,12 +61,15 @@ int main(void)
 
 	while (1)
 	{
+//		GPIO Input
 		memset(msg,0,sizeof(msg));
 		sprintf(msg,"Switch Input: %d",HAL_GPIO_ReadPin(GPIOC, PINC_SWITCH));
 		dmsg(msg);
 		memset(msg,0,sizeof(msg));
 		sprintf(msg,"State Input: %d",HAL_GPIO_ReadPin(GPIOB, PINB_STATE));
 		dmsg(msg);
+
+//		Pulse Input
 		for (int i=0; i<3; i++)
 		{
 			if (freq_update[i]==1)

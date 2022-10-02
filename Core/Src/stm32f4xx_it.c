@@ -111,29 +111,28 @@ void CAN1_SCE_IRQHandler(void)
   HAL_CAN_IRQHandler(&hcan1);
 }
 
-void I2C2_EV_IRQHandler(void)
-{
-  HAL_I2C_EV_IRQHandler(&hi2c2);
-}
-
-void I2C2_ER_IRQHandler(void)
-{
-  HAL_I2C_ER_IRQHandler(&hi2c2);
-}
-
+//void I2C2_EV_IRQHandler(void)
+//{
+//  HAL_I2C_EV_IRQHandler(&hi2c2);
+//}
+//
+//void I2C2_ER_IRQHandler(void)
+//{
+//  HAL_I2C_ER_IRQHandler(&hi2c2);
+//}
 
 void SPI1_IRQHandler(void)
 {
   HAL_SPI_IRQHandler(&hspi1);
 }
 
-void USART1_IRQHandler(void)
-{
-  HAL_UART_IRQHandler(&huart1);
-}
-
-void USART3_IRQHandler(void)
-{
-  HAL_UART_IRQHandler(&huart3);
-}
+//void USART1_IRQHandler(void)
+//{
+//  HAL_UART_IRQHandler(&huart1);
+//}
+//
+//void USART3_IRQHandler(void)
+//{
+//  HAL_UART_IRQHandler(&huart3);
+//}
 

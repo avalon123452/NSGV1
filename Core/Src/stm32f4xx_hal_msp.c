@@ -223,10 +223,10 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
     /* Peripheral clock enable */
     __HAL_RCC_I2C2_CLK_ENABLE();
     /* I2C2 interrupt Init */
-    HAL_NVIC_SetPriority(I2C2_EV_IRQn, 2, 0);
-    HAL_NVIC_EnableIRQ(I2C2_EV_IRQn);
-    HAL_NVIC_SetPriority(I2C2_ER_IRQn, 2, 0);
-    HAL_NVIC_EnableIRQ(I2C2_ER_IRQn);
+//    HAL_NVIC_SetPriority(I2C2_EV_IRQn, 2, 0);
+//    HAL_NVIC_EnableIRQ(I2C2_EV_IRQn);
+//    HAL_NVIC_SetPriority(I2C2_ER_IRQn, 2, 0);
+//    HAL_NVIC_EnableIRQ(I2C2_ER_IRQn);
   }
 
 }
@@ -245,8 +245,8 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
     HAL_GPIO_DeInit(GPIOB, PINB_I2C_SCL|PINB_12C_SDA);
 
     /* I2C2 interrupt DeInit */
-    HAL_NVIC_DisableIRQ(I2C2_EV_IRQn);
-    HAL_NVIC_DisableIRQ(I2C2_ER_IRQn);
+//    HAL_NVIC_DisableIRQ(I2C2_EV_IRQn);
+//    HAL_NVIC_DisableIRQ(I2C2_ER_IRQn);
   }
 
 }
@@ -321,8 +321,8 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /* USART1 interrupt Init */
-    HAL_NVIC_SetPriority(USART1_IRQn, 3, 0);
-    HAL_NVIC_EnableIRQ(USART1_IRQn);
+//    HAL_NVIC_SetPriority(USART1_IRQn, 3, 0);
+//    HAL_NVIC_EnableIRQ(USART1_IRQn);
   }
   else if(huart->Instance==USART3)
   {
@@ -342,8 +342,8 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     /* USART3 interrupt Init */
-    HAL_NVIC_SetPriority(USART3_IRQn, 3, 0);
-    HAL_NVIC_EnableIRQ(USART3_IRQn);
+//    HAL_NVIC_SetPriority(USART3_IRQn, 3, 0);
+//    HAL_NVIC_EnableIRQ(USART3_IRQn);
   }
 
 }
@@ -362,7 +362,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
     HAL_GPIO_DeInit(GPIOB, PINB_UART1_TX|PINB_UART1_RX);
 
     /* USART1 interrupt DeInit */
-    HAL_NVIC_DisableIRQ(USART1_IRQn);
+//    HAL_NVIC_DisableIRQ(USART1_IRQn);
   }
   else if(huart->Instance==USART3)
   {
@@ -376,7 +376,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
     HAL_GPIO_DeInit(GPIOC, PINC_UART2_RX|PINC_UART2_TX);
 
     /* USART3 interrupt DeInit */
-    HAL_NVIC_DisableIRQ(USART3_IRQn);
+//    HAL_NVIC_DisableIRQ(USART3_IRQn);
   }
 
 }

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "ds3231_for_stm32_hal.h"
 
 ADC_HandleTypeDef hadc1;
 CAN_HandleTypeDef hcan1;
@@ -14,10 +15,12 @@ TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim9;
 
 uint32_t tick=0, tim_capture[3][2]={0};
-uint8_t freq_update[3]={0};
+uint8_t freq_update[3]={0},beat=0, adc_update=0;
 UART_HandleTypeDef uart={0};
+CAN_RxHeaderTypeDef RxHeader;
+uint8_t can_msg[8]={0};
 
-void SystemClock_Config(void);
+static void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_SPI1_Init(void);
@@ -29,10 +32,27 @@ static void MX_TIM2_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM9_Init(void);
 void dmsg(char *msg);
+void CAN_Filter_Config(void);
+void HAL_SYSTICK_Callback(void);
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim);
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc);
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan);
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan);
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan);
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan);
+
 
 int main(void)
 {
 	char msg[100];
+	CAN_TxHeaderTypeDef TxHeader={0};
+	TxHeader.DLC = 5;
+	TxHeader.StdId = 0x6A4;
+	TxHeader.IDE   = CAN_ID_STD;
+	TxHeader.RTR = CAN_RTR_DATA;
+	uint32_t TxMailbox;
+	uint16_t PIN_LED = PINC_RLED|PINC_GLED|PINC_BLED|PINC_YLED, year=0;
+	uint32_t vmon=0;
 	float freq[3]={0}, duty_cycle[3]={0};
    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	HAL_Init();
@@ -49,6 +69,10 @@ int main(void)
 	MX_TIM2_Init();
 	MX_TIM5_Init();
 	MX_TIM9_Init();
+	DS3231_Init(&hi2c2);
+	DS3231_SetFullTime(15, 25, 30);
+	DS3231_SetFullDate(29, 9, 4, 2022);
+	CAN_Filter_Config();
 
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_2);
@@ -57,10 +81,30 @@ int main(void)
 	HAL_TIM_IC_Start_IT(&htim9,TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim9,TIM_CHANNEL_2);
 
+	HAL_ADC_Start_IT(&hadc1);
+
 	uart= huart1;
+
+	if(HAL_CAN_ActivateNotification(&hcan1,CAN_IT_TX_MAILBOX_EMPTY | CAN_IT_RX_FIFO0_MSG_PENDING |CAN_IT_BUSOFF) != HAL_OK)
+	{
+		Error_Handler();
+	}
+
+	if( HAL_CAN_Start(&hcan1) != HAL_OK)
+	{
+		Error_Handler();
+	}
 
 	while (1)
 	{
+//		LED Toggle
+		if (beat==1)
+		{
+			beat=0;
+			HAL_GPIO_TogglePin(GPIOC,PINC_HEART|PIN_LED);
+			HAL_GPIO_TogglePin(GPIOB, PINB_EN);
+		}
+
 //		GPIO Input
 		memset(msg,0,sizeof(msg));
 		sprintf(msg,"Switch Input: %d",HAL_GPIO_ReadPin(GPIOC, PINC_SWITCH));
@@ -83,10 +127,61 @@ int main(void)
 			dmsg(msg);
 		}
 
+//		Voltage Monitor
+		if (adc_update==1)
+		{
+			vmon=HAL_ADC_GetValue(&hadc1);
+			memset(msg,0,sizeof(msg));
+			sprintf(msg,"Voltage Monitor: %ld", vmon);
+			dmsg(msg);
+		}
+//		RTC
+		year= DS3231_GetYear();
+		memset(msg,0,sizeof(msg));
+		sprintf(msg,"RTC Year: %d", year);
+		dmsg(msg);
+//		CAN TX
+		if( HAL_CAN_AddTxMessage(&hcan1,&TxHeader,(uint8_t*)"HELLO",&TxMailbox) != HAL_OK)
+		{
+			Error_Handler();
+		}
+//		CAN RX
+		memset(msg,0,sizeof(msg));
+		sprintf(msg,"Message Received : #%x",can_msg[0]);
+		dmsg(msg);
 
 		HAL_Delay(1000);
 	}
 	return 0;
+}
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+	dmsg("CAN Transmitted Mailbox 0");
+
+}
+
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+	dmsg("CAN Transmitted Mailbox 1");
+}
+
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+	dmsg("CAN Transmitted Mailbox 2");
+}
+
+ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+	if(HAL_CAN_GetRxMessage(hcan,CAN_RX_FIFO0,&RxHeader,can_msg) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+	adc_update=1;
 }
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
@@ -131,12 +226,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 void HAL_SYSTICK_Callback(void)
 {
-	uint16_t PIN_LED = PINC_RLED|PINC_GLED|PINC_BLED|PINC_YLED;
 	if (HAL_GetTick()- tick >=1000)
 	{
 		tick = HAL_GetTick();
-		HAL_GPIO_TogglePin(GPIOC,PINC_HEART|PIN_LED);
-		HAL_GPIO_TogglePin(GPIOB, PINB_EN);
+		beat=1;
 	}
 }
 
@@ -148,7 +241,28 @@ void dmsg(char *msg)
 	HAL_UART_Transmit(&uart, (uint8_t*)str, strlen(str), HAL_MAX_DELAY);
 }
 
-void SystemClock_Config(void)
+void CAN_Filter_Config(void)
+{
+	CAN_FilterTypeDef can1_filter_init;
+
+	can1_filter_init.FilterActivation = ENABLE;
+	can1_filter_init.FilterBank  = 0;
+	can1_filter_init.FilterFIFOAssignment = CAN_RX_FIFO0;
+	can1_filter_init.FilterIdHigh = 0x0000;
+	can1_filter_init.FilterIdLow = 0x0000;
+	can1_filter_init.FilterMaskIdHigh = 0X0000;
+	can1_filter_init.FilterMaskIdLow = 0x0000;
+	can1_filter_init.FilterMode = CAN_FILTERMODE_IDMASK;
+	can1_filter_init.FilterScale = CAN_FILTERSCALE_32BIT;
+
+	if( HAL_CAN_ConfigFilter(&hcan1,&can1_filter_init) != HAL_OK)
+	{
+		Error_Handler();
+	}
+
+}
+
+static void SystemClock_Config(void)
 {
 	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
 	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
@@ -316,11 +430,11 @@ static void MX_ADC1_Init(void)
 	/** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
 	*/
 	hadc1.Instance = ADC1;
-	hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+	hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
 	hadc1.Init.Resolution = ADC_RESOLUTION_12B;
 	hadc1.Init.ScanConvMode = DISABLE;
 	hadc1.Init.ContinuousConvMode = DISABLE;
-	hadc1.Init.DiscontinuousConvMode = DISABLE;
+	hadc1.Init.DiscontinuousConvMode = ENABLE;
 	hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
 	hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
 	hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
@@ -345,15 +459,15 @@ static void MX_ADC1_Init(void)
 static void MX_CAN1_Init(void)
 {
 	hcan1.Instance = CAN1;
-	hcan1.Init.Prescaler = 16;
+	hcan1.Init.Prescaler = 10;
 	hcan1.Init.Mode = CAN_MODE_NORMAL;
 	hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-	hcan1.Init.TimeSeg1 = CAN_BS1_1TQ;
-	hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
+	hcan1.Init.TimeSeg1 = CAN_BS1_13TQ;
+	hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
 	hcan1.Init.TimeTriggeredMode = DISABLE;
-	hcan1.Init.AutoBusOff = DISABLE;
+	hcan1.Init.AutoBusOff = ENABLE;
 	hcan1.Init.AutoWakeUp = DISABLE;
-	hcan1.Init.AutoRetransmission = DISABLE;
+	hcan1.Init.AutoRetransmission = ENABLE;
 	hcan1.Init.ReceiveFifoLocked = DISABLE;
 	hcan1.Init.TransmitFifoPriority = DISABLE;
 	if (HAL_CAN_Init(&hcan1) != HAL_OK)

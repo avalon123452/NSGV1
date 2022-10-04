@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ds3231_for_stm32_hal.h"
+#include "INA219.h"
+#include "M24C32.h"
 
 ADC_HandleTypeDef hadc1;
 CAN_HandleTypeDef hcan1;
@@ -44,6 +46,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan);
 
 int main(void)
 {
+	uint16_t vbus=0, vshunt=0, current=0;
+	INA219_t ina1, ina2;
+	uint8_t mem=10;
 	char msg[100];
 	CAN_TxHeaderTypeDef TxHeader={0};
 	TxHeader.DLC = 5;
@@ -73,6 +78,9 @@ int main(void)
 	DS3231_SetFullTime(15, 25, 30);
 	DS3231_SetFullDate(29, 9, 4, 2022);
 	CAN_Filter_Config();
+	while(!INA219_Init(&ina1, &hi2c2, INA219_ADDRESS));
+	while(!INA219_Init(&ina2, &hi2c2, INA219_ADDRESS+1));
+	M24C32_Init(&hi2c2);
 
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_2);
@@ -85,15 +93,21 @@ int main(void)
 
 	uart= huart1;
 
-	if(HAL_CAN_ActivateNotification(&hcan1,CAN_IT_TX_MAILBOX_EMPTY | CAN_IT_RX_FIFO0_MSG_PENDING |CAN_IT_BUSOFF) != HAL_OK)
-	{
-		Error_Handler();
-	}
+	M24C32_WriteByte(0x0001, 69);
+	HAL_Delay(1000);
+	mem=M24C32_ReadRandomAddr(0x0001);
 
-	if( HAL_CAN_Start(&hcan1) != HAL_OK)
-	{
-		Error_Handler();
-	}
+//	if(HAL_CAN_ActivateNotification(&hcan1,CAN_IT_TX_MAILBOX_EMPTY | CAN_IT_RX_FIFO0_MSG_PENDING |CAN_IT_BUSOFF) != HAL_OK)
+//	{
+//		Error_Handler();
+//	}
+//
+//	if( HAL_CAN_Start(&hcan1) != HAL_OK)
+//	{
+//		Error_Handler();
+//	}
+
+
 
 	while (1)
 	{
@@ -140,14 +154,31 @@ int main(void)
 		memset(msg,0,sizeof(msg));
 		sprintf(msg,"RTC Year: %d", year);
 		dmsg(msg);
-//		CAN TX
-		if( HAL_CAN_AddTxMessage(&hcan1,&TxHeader,(uint8_t*)"HELLO",&TxMailbox) != HAL_OK)
-		{
-			Error_Handler();
-		}
-//		CAN RX
+////		CAN TX
+//		if( HAL_CAN_AddTxMessage(&hcan1,&TxHeader,(uint8_t*)"HELLO",&TxMailbox) != HAL_OK)
+//		{
+//			Error_Handler();
+//		}
+////		CAN RX
+//		memset(msg,0,sizeof(msg));
+//		sprintf(msg,"Message Received : #%x",can_msg[0]);
+//		dmsg(msg);
+//		Current Monitor
+		vbus = INA219_ReadBusVoltage(&ina1);
+		vshunt = INA219_ReadShuntVolage(&ina1);
+		current = INA219_ReadCurrent(&ina1);
 		memset(msg,0,sizeof(msg));
-		sprintf(msg,"Message Received : #%x",can_msg[0]);
+		sprintf(msg,"Bus Voltage1: %d  Voltage1: %d  Current1: %d", vbus, vshunt, current);
+		dmsg(msg);
+		vbus = INA219_ReadBusVoltage(&ina2);
+		vshunt = INA219_ReadShuntVolage(&ina2);
+		current = INA219_ReadCurrent(&ina2);
+		memset(msg,0,sizeof(msg));
+		sprintf(msg,"Bus Voltage2: %d  Voltage2: %d  Current2: %d", vbus, vshunt, current);
+		dmsg(msg);
+//		EEPROM
+		memset(msg,0,sizeof(msg));
+		sprintf(msg,"Memory 0x1:  %d  ", mem);
 		dmsg(msg);
 
 		HAL_Delay(1000);

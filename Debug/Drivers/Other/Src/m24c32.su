@@ -1,0 +1,4 @@
+../Drivers/Other/Src/m24c32.c:12:6:M24C32_Init	16	static
+../Drivers/Other/Src/m24c32.c:16:6:M24C32_WriteByte	32	static
+../Drivers/Other/Src/m24c32.c:21:9:M24C32_ReadCurrentAddr	24	static
+../Drivers/Other/Src/m24c32.c:27:9:M24C32_ReadRandomAddr	32	static

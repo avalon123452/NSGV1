@@ -34,7 +34,9 @@ Drivers/Other/Src/INA219.o: ../Drivers/Other/Src/INA219.c \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Inc/pin_conf.h ../Drivers/Other/Inc/INA219.h
+ ../Core/Inc/pin_conf.h ../Drivers/Other/Inc/ds3231_for_stm32_hal.h \
+ ../Drivers/Other/Inc/INA219.h ../Drivers/Other/Inc/M24C32.h \
+ ../Drivers/Other/Inc/AD7193.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -72,4 +74,7 @@ Drivers/Other/Src/INA219.o: ../Drivers/Other/Src/INA219.c \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
 ../Core/Inc/pin_conf.h:
+../Drivers/Other/Inc/ds3231_for_stm32_hal.h:
 ../Drivers/Other/Inc/INA219.h:
+../Drivers/Other/Inc/M24C32.h:
+../Drivers/Other/Inc/AD7193.h:

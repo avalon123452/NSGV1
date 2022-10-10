@@ -36,8 +36,8 @@ typedef struct
 
 void AD7193_Init(AD7193_t *ad7193, SPI_HandleTypeDef *spi, GPIO_TypeDef* SS_GPIO,uint16_t SS_pin);
 void AD7193_Reset(AD7193_t *ad7193);
-void AD7193_WriteRegValue(AD7193_t *ad7193,uint8_t regAddr, uint8_t data_length,uint32_t val);
-uint8_t AD7193_GetRegValue(AD7193_t *ad7193,uint8_t regAddr, uint8_t data_length);
+void AD7193_WriteRegValue(AD7193_t *ad7193,uint8_t regAddr, uint32_t val, uint8_t data_length);
+uint32_t AD7193_GetRegValue(AD7193_t *ad7193,uint8_t regAddr, uint8_t data_length);
 
 
 #ifdef __cplusplus

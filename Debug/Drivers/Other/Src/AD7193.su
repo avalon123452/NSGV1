@@ -1,4 +1,4 @@
 ../Drivers/Other/Src/AD7193.c:5:6:AD7193_Init	24	static
 ../Drivers/Other/Src/AD7193.c:11:6:AD7193_Reset	24	static
-../Drivers/Other/Src/AD7193.c:21:6:AD7193_WriteRegValue	40	static
-../Drivers/Other/Src/AD7193.c:34:9:AD7193_GetRegValue	24	static
+../Drivers/Other/Src/AD7193.c:20:6:AD7193_WriteRegValue	40	static
+../Drivers/Other/Src/AD7193.c:31:10:AD7193_GetRegValue	64	dynamic

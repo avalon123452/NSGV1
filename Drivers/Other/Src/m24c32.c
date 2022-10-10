@@ -1,11 +1,6 @@
 
-/* An STM32 HAL library written for the M24C32 real-time clock IC. */
-/* Library by @eepj www.github.com/eepj */
 #include "M24C32.h"
-#include "main.h"
-#ifdef __cplusplus
-extern "C"{
-#endif
+
 
 I2C_HandleTypeDef *_M24C32_ui2c;
 
@@ -32,6 +27,4 @@ uint8_t M24C32_ReadRandomAddr(uint16_t regAddr) {
 	return val;
 }
 
-#ifdef __cplusplus
-}
-#endif
+

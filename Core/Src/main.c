@@ -5,6 +5,7 @@
 #include "ds3231_for_stm32_hal.h"
 #include "INA219.h"
 #include "M24C32.h"
+#include "AD7193.h"
 
 ADC_HandleTypeDef hadc1;
 CAN_HandleTypeDef hcan1;
@@ -46,9 +47,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan);
 
 int main(void)
 {
+	AD7193_t volsen1,volsen2,volsen3;
+	uint8_t volid1, volid2, volid3;
 	uint16_t vbus=0, vshunt=0, current=0;
 	INA219_t ina1, ina2;
-	uint8_t mem=10;
+	uint8_t mem=0;
 	char msg[100];
 	CAN_TxHeaderTypeDef TxHeader={0};
 	TxHeader.DLC = 5;
@@ -81,6 +84,9 @@ int main(void)
 	while(!INA219_Init(&ina1, &hi2c2, INA219_ADDRESS));
 	while(!INA219_Init(&ina2, &hi2c2, INA219_ADDRESS+1));
 	M24C32_Init(&hi2c2);
+	AD7193_Init(&volsen1, &hspi1, GPIOC, PINC_SPI_SSA);
+	AD7193_Init(&volsen2, &hspi1, GPIOC, PINC_SPI_SSB);
+	AD7193_Init(&volsen3, &hspi1, GPIOC, PINC_SPI_SSV);
 
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_2);
@@ -93,9 +99,9 @@ int main(void)
 
 	uart= huart1;
 
-	M24C32_WriteByte(0x0001, 69);
-	HAL_Delay(1000);
-	mem=M24C32_ReadRandomAddr(0x0001);
+//	M24C32_WriteByte(0x0001, 69);
+//	HAL_Delay(1000);
+//	mem=M24C32_ReadRandomAddr(0x0001);
 
 //	if(HAL_CAN_ActivateNotification(&hcan1,CAN_IT_TX_MAILBOX_EMPTY | CAN_IT_RX_FIFO0_MSG_PENDING |CAN_IT_BUSOFF) != HAL_OK)
 //	{
@@ -107,53 +113,52 @@ int main(void)
 //		Error_Handler();
 //	}
 
-
-
 	while (1)
 	{
 //		LED Toggle
 		if (beat==1)
 		{
 			beat=0;
-			HAL_GPIO_TogglePin(GPIOC,PINC_HEART|PIN_LED);
-			HAL_GPIO_TogglePin(GPIOB, PINB_EN);
+			HAL_GPIO_TogglePin(GPIOC,PINC_HEART);
+//			HAL_GPIO_TogglePin(GPIOC,PINC_HEART|PIN_LED);
+//			HAL_GPIO_TogglePin(GPIOB, PINB_EN);
 		}
 
-//		GPIO Input
-		memset(msg,0,sizeof(msg));
-		sprintf(msg,"Switch Input: %d",HAL_GPIO_ReadPin(GPIOC, PINC_SWITCH));
-		dmsg(msg);
-		memset(msg,0,sizeof(msg));
-		sprintf(msg,"State Input: %d",HAL_GPIO_ReadPin(GPIOB, PINB_STATE));
-		dmsg(msg);
-
-//		Pulse Input
-		for (int i=0; i<3; i++)
-		{
-			if (freq_update[i]==1)
-			{
-				freq[i]= 1000000/tim_capture[i][0];
-				duty_cycle[i]= (tim_capture[i][1]/tim_capture[i][0])*100;
-				freq_update[i]=0;
-			}
-			memset(msg,0,sizeof(msg));
-			sprintf(msg,"Frequency3: %.2f   Duty Cycle: %.2f", freq[i],duty_cycle[i]);
-			dmsg(msg);
-		}
+////		GPIO Input
+//		memset(msg,0,sizeof(msg));
+//		sprintf(msg,"Switch Input: %d",HAL_GPIO_ReadPin(GPIOC, PINC_SWITCH));
+//		dmsg(msg);
+//		memset(msg,0,sizeof(msg));
+//		sprintf(msg,"State Input: %d",HAL_GPIO_ReadPin(GPIOB, PINB_STATE));
+//		dmsg(msg);
+//
+////		Pulse Input
+//		for (int i=0; i<3; i++)
+//		{
+//			if (freq_update[i]==1)
+//			{
+//				freq[i]= 1000000/tim_capture[i][0];
+//				duty_cycle[i]= (tim_capture[i][1]/tim_capture[i][0])*100;
+//				freq_update[i]=0;
+//			}
+//			memset(msg,0,sizeof(msg));
+//			sprintf(msg,"Frequency3: %.2f   Duty Cycle: %.2f", freq[i],duty_cycle[i]);
+//			dmsg(msg);
+//		}
 
 //		Voltage Monitor
-		if (adc_update==1)
-		{
-			vmon=HAL_ADC_GetValue(&hadc1);
-			memset(msg,0,sizeof(msg));
-			sprintf(msg,"Voltage Monitor: %ld", vmon);
-			dmsg(msg);
-		}
-//		RTC
-		year= DS3231_GetYear();
-		memset(msg,0,sizeof(msg));
-		sprintf(msg,"RTC Year: %d", year);
-		dmsg(msg);
+//		if (adc_update==1)
+//		{
+//			vmon=HAL_ADC_GetValue(&hadc1);
+//			memset(msg,0,sizeof(msg));
+//			sprintf(msg,"Voltage Monitor: %ld", vmon);
+//			dmsg(msg);
+//		}
+////		RTC
+//		year= DS3231_GetYear();
+//		memset(msg,0,sizeof(msg));
+//		sprintf(msg,"RTC Year: %d", year);
+//		dmsg(msg);
 ////		CAN TX
 //		if( HAL_CAN_AddTxMessage(&hcan1,&TxHeader,(uint8_t*)"HELLO",&TxMailbox) != HAL_OK)
 //		{
@@ -164,24 +169,36 @@ int main(void)
 //		sprintf(msg,"Message Received : #%x",can_msg[0]);
 //		dmsg(msg);
 //		Current Monitor
-		vbus = INA219_ReadBusVoltage(&ina1);
-		vshunt = INA219_ReadShuntVolage(&ina1);
-		current = INA219_ReadCurrent(&ina1);
+//		vbus = INA219_ReadBusVoltage(&ina1);
+//		vshunt = INA219_ReadShuntVolage(&ina1);
+//		current = INA219_ReadCurrent(&ina1);
+//		memset(msg,0,sizeof(msg));
+//		sprintf(msg,"Bus Voltage1: %d  Voltage1: %d  Current1: %d", vbus, vshunt, current);
+//		dmsg(msg);
+//		vbus = INA219_ReadBusVoltage(&ina2);
+//		vshunt = INA219_ReadShuntVolage(&ina2);
+//		current = INA219_ReadCurrent(&ina2);
+//		memset(msg,0,sizeof(msg));
+//		sprintf(msg,"Bus Voltage2: %d  Voltage2: %d  Current2: %d", vbus, vshunt, current);
+//		dmsg(msg);
+////		EEPROM
+//		memset(msg,0,sizeof(msg));
+//		sprintf(msg,"Memory 0x1:  %d  ", mem);
+//		dmsg(msg);
+//		AD7193
+//		AD7193_Reset(&volsen1);
+		volid1= AD7193_GetRegValue(&volsen1,4, 1);
+//		HAL_Delay(10);
+//		AD7193_Reset(&volsen2);
+		volid2= AD7193_GetRegValue(&volsen2,4, 1);
+//		HAL_Delay(10);
+//		AD7193_Reset(&volsen3);
+		volid3= AD7193_GetRegValue(&volsen3,4, 1);
+//		HAL_Delay(10);
 		memset(msg,0,sizeof(msg));
-		sprintf(msg,"Bus Voltage1: %d  Voltage1: %d  Current1: %d", vbus, vshunt, current);
+		sprintf(msg,"AD7193:  %d  %d  %d", volid1, volid2, volid3);
 		dmsg(msg);
-		vbus = INA219_ReadBusVoltage(&ina2);
-		vshunt = INA219_ReadShuntVolage(&ina2);
-		current = INA219_ReadCurrent(&ina2);
-		memset(msg,0,sizeof(msg));
-		sprintf(msg,"Bus Voltage2: %d  Voltage2: %d  Current2: %d", vbus, vshunt, current);
-		dmsg(msg);
-//		EEPROM
-		memset(msg,0,sizeof(msg));
-		sprintf(msg,"Memory 0x1:  %d  ", mem);
-		dmsg(msg);
-
-		HAL_Delay(1000);
+		HAL_Delay(10);
 	}
 	return 0;
 }
@@ -532,10 +549,10 @@ static void MX_SPI1_Init(void)
 	hspi1.Init.Mode = SPI_MODE_MASTER;
 	hspi1.Init.Direction = SPI_DIRECTION_2LINES;
 	hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-	hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-	hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+	hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
+	hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
 	hspi1.Init.NSS = SPI_NSS_SOFT;
-	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
 	hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
 	hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
 	hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

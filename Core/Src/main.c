@@ -41,20 +41,19 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan);
 
 int main(void)
 {
-	AD7193_t volsen1,volsen2,volsen3;
-	uint32_t volid1, volid2, volid3;
-	uint16_t vbus=0, vshunt=0, current=0;
+	MAX6675_t thermosen;
 	INA219_t ina1, ina2;
-	uint8_t mem=0;
+	AD7193_t volsen1,volsen2,volsen3;
+	uint32_t volid1, volid2, volid3, TxMailbox, vmon=0;
+	uint16_t vbus=0, vshunt=0, current=0, thermoval=0, year=0;
+	uint8_t mem=0, open=0;
 	char msg[100];
 	CAN_TxHeaderTypeDef TxHeader={0};
 	TxHeader.DLC = 5;
 	TxHeader.StdId = 0x6A4;
 	TxHeader.IDE   = CAN_ID_STD;
 	TxHeader.RTR = CAN_RTR_DATA;
-	uint32_t TxMailbox;
-	uint16_t PIN_LED = PINC_RLED|PINC_GLED|PINC_BLED|PINC_YLED, year=0;
-	uint32_t vmon=0;
+	uint16_t PIN_LED = PINC_RLED|PINC_GLED|PINC_BLED|PINC_YLED;
 	float freq[3]={0}, duty_cycle[3]={0};
    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	HAL_Init();
@@ -81,6 +80,8 @@ int main(void)
 	AD7193_Init(&volsen1, &hspi1, GPIOC, PINC_SPI_SSA);
 	AD7193_Init(&volsen2, &hspi1, GPIOC, PINC_SPI_SSB);
 	AD7193_Init(&volsen3, &hspi1, GPIOC, PINC_SPI_SSV);
+
+	MAX6675_Init(&thermosen, &hspi1, GPIOC, PINC_SPI_SST);
 
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_2);
@@ -187,6 +188,12 @@ int main(void)
 		volid3= AD7193_GetRegValue(&volsen3,1, 3);
 		memset(msg,0,sizeof(msg));
 		sprintf(msg,"AD7193:  #%lx  #%lx  #%lx", volid1, volid2, volid3);
+		dmsg(msg);
+//		MAX6675
+		thermoval = MAX6675_getReg(&thermosen);
+		open = MAX6675_isOpen(&thermosen);
+		memset(msg,0,sizeof(msg));
+		sprintf(msg,"MAX6675:  #%x  %d", thermoval, open);
 		dmsg(msg);
 		HAL_Delay(1000);
 	}

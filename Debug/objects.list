@@ -7,6 +7,7 @@
 "./Core/Startup/startup_stm32f405vgtx.o"
 "./Drivers/Other/Src/AD7193.o"
 "./Drivers/Other/Src/INA219.o"
+"./Drivers/Other/Src/MAX6675.o"
 "./Drivers/Other/Src/ds3231_for_stm32_hal.o"
 "./Drivers/Other/Src/m24c32.o"
 "./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o"

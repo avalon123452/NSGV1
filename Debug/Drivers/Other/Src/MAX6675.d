@@ -1,5 +1,6 @@
-Core/Src/stm32f4xx_hal_msp.o: ../Core/Src/stm32f4xx_hal_msp.c \
- ../Core/Inc/main.h ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
+Drivers/Other/Src/MAX6675.o: ../Drivers/Other/Src/MAX6675.c \
+ ../Drivers/Other/Inc/MAX6675.h ../Core/Inc/main.h \
+ ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h \
@@ -36,7 +37,8 @@ Core/Src/stm32f4xx_hal_msp.o: ../Core/Src/stm32f4xx_hal_msp.c \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
  ../Core/Inc/pin_conf.h ../Drivers/Other/Inc/ds3231_for_stm32_hal.h \
  ../Drivers/Other/Inc/INA219.h ../Drivers/Other/Inc/M24C32.h \
- ../Drivers/Other/Inc/AD7193.h ../Drivers/Other/Inc/MAX6675.h
+ ../Drivers/Other/Inc/AD7193.h
+../Drivers/Other/Inc/MAX6675.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -78,4 +80,3 @@ Core/Src/stm32f4xx_hal_msp.o: ../Core/Src/stm32f4xx_hal_msp.c \
 ../Drivers/Other/Inc/INA219.h:
 ../Drivers/Other/Inc/M24C32.h:
 ../Drivers/Other/Inc/AD7193.h:
-../Drivers/Other/Inc/MAX6675.h:

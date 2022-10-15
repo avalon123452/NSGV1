@@ -14,6 +14,7 @@ extern "C" {
 #include "INA219.h"
 #include "M24C32.h"
 #include "AD7193.h"
+#include "MAX6675.h"
 
 void Error_Handler(void);
 
